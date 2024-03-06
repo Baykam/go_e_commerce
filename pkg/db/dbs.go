@@ -11,6 +11,8 @@ import (
 
 type IDatabaseInterface interface {
 	DeleteFromTableWithCondition(ctx context.Context, tableName string, condition string, args ...interface{}) error
+	GetFromTableWithCondition(ctx context.Context, tableName string, condition string, model interface{}) (interface{}, error)
+	GetFromTableWithConditionInList(ctx context.Context, tableName string, condition string, model any) ([]any, error)
 }
 
 type Database struct {
@@ -64,7 +66,7 @@ func (d *Database) GetFromTableWithCondition(ctx context.Context, tableName stri
 	return model, nil
 }
 
-func (d *Database) GetFromTableWithConditionInList(ctx context.Context, tableName string, condition string, model interface{}) ([]interface{}, error) {
+func (d *Database) GetFromTableWithConditionInList(ctx context.Context, tableName string, condition string, model any) ([]any, error) {
 	var newList []interface{}
 	ctx, cancel := context.WithTimeout(ctx, config.DatabaseTimeOut)
 	defer cancel()
