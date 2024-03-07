@@ -19,6 +19,18 @@ type Database struct {
 	db *sql.DB
 }
 
+const (
+	UsersTable     = "user"
+	ProductTable   = "product"
+	OrderTable     = "order"
+	OrderLineTable = "order_line"
+)
+
+const (
+	Id    = "id"
+	Order = "order"
+)
+
 func NewDatabase(uri string) (*Database, error) {
 	db, err := sql.Open("postgres", uri)
 	if err != nil {

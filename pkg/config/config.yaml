@@ -3,7 +3,8 @@ http_prot: 8888
 grpc_port: 8889
 auth_secret: 123123
 
-database_uri: postgres://username:password@host:5432/database
+database_uri: postgres://postgres:abc123@localhost:5432/golang_test?sslmode=disable 
+# postgres://username:password@host:5432/database
 
 redis_uri: localhost:6379
 redis_password:
