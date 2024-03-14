@@ -4,15 +4,18 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"golang_testing_grpc/pkg/config"
 
 	_ "github.com/lib/pq"
 )
 
 type IDatabaseInterface interface {
-	DeleteFromTableWithCondition(ctx context.Context, tableName string, condition string, args ...interface{}) error
-	GetFromTableWithCondition(ctx context.Context, tableName string, condition string, model interface{}) (interface{}, error)
-	GetFromTableWithConditionInList(ctx context.Context, tableName string, condition string, model any) ([]any, error)
+	JustQuery(ctx context.Context, tableName string, query string) (*sql.Rows, error)
+	InsertInto(tableName string, dataPlace string, insertData string) (sql.Result, error)
+	UpdateData(tableName string, updateData string, newData string, whereData string) (sql.Result, error)
+	DeleteData(tableName string, whereData string) (sql.Result, error)
+	GetLimit(pageLimit int) string
+	WhereData(query string) string
+	GetOffset(pageOffset int) string
 }
 
 type Database struct {
@@ -54,50 +57,53 @@ func (d *Database) CloseDatabase() error {
 	return nil
 }
 
-func (d *Database) DeleteFromTableWithCondition(ctx context.Context, tableName string, condition string, args ...interface{}) error {
-	ctx, cancel := context.WithTimeout(ctx, config.DatabaseTimeOut)
-	defer cancel()
-
-	query := fmt.Sprintf(`DELETE FROM %s WHERE %s`, tableName, condition)
-	_, err := d.db.ExecContext(ctx, query, args...)
+func (d *Database) JustQuery(ctx context.Context, tableName string, query string) (*sql.Rows, error) {
+	q := fmt.Sprintf(`SELECT * FROM %s %s`, tableName, query)
+	rows, err := d.db.Query(q)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return rows, nil
 }
 
-func (d *Database) GetFromTableWithCondition(ctx context.Context, tableName string, condition string, model interface{}) (interface{}, error) {
-	ctx, cancel := context.WithTimeout(ctx, config.DatabaseTimeOut)
-	defer cancel()
-
-	query := fmt.Sprintf(`SELECT * FROM %s WHERE %s`, tableName, condition)
-	err := d.db.QueryRowContext(ctx, query).Scan(model)
-	if err != nil {
-		return nil, err
-	}
-	return model, nil
+func (d *Database) WhereData(query string) string {
+	q := fmt.Sprintf(" WHERE %s", query)
+	return q
 }
 
-func (d *Database) GetFromTableWithConditionInList(ctx context.Context, tableName string, condition string, model any) ([]any, error) {
-	var newList []interface{}
-	ctx, cancel := context.WithTimeout(ctx, config.DatabaseTimeOut)
-	defer cancel()
+func (d *Database) GetLimit(pageLimit int) string {
+	q := fmt.Sprintf(" LIMIT %d", pageLimit)
+	return q
+}
 
-	query := fmt.Sprintf(`SELECT * FROM %s WHERE %s`, tableName, condition)
-	rows, err := d.db.QueryContext(ctx, query)
+func (d *Database) GetOffset(pageOffset int) string {
+	q := fmt.Sprintf(" OFFSET %d", pageOffset)
+	return q
+}
+
+func (d *Database) InsertInto(tableName string, dataPlace string, insertData string) (sql.Result, error) {
+	q := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, tableName, dataPlace, insertData)
+	rows, err := d.db.Exec(q)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	return rows, nil
+}
 
-	for rows.Next() {
-		if err := rows.Scan(model); err != nil {
-			return nil, err
-		}
-		newList = append(newList, model)
-	}
-	if err := rows.Err(); err != nil {
+func (d *Database) UpdateData(tableName string, updateData string, newData string, whereData string) (sql.Result, error) {
+	q := fmt.Sprintf(`UPDATE %s SET %s = %s WHERE %s`, tableName, updateData, newData, whereData)
+	rows, err := d.db.Exec(q)
+	if err != nil {
 		return nil, err
 	}
-	return newList, nil
+	return rows, nil
+}
+
+func (d *Database) DeleteData(tableName string, whereData string) (sql.Result, error) {
+	q := fmt.Sprintf(`DELETE FROM %s WHERE %s`, tableName, whereData)
+	row, err := d.db.Exec(q)
+	if err != nil {
+		return nil, err
+	}
+	return row, nil
 }

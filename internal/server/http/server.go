@@ -2,14 +2,12 @@ package http
 
 import (
 	"fmt"
+	productHttp "golang_testing_grpc/internal/product/port/http"
 	"golang_testing_grpc/pkg/config"
 	"golang_testing_grpc/pkg/db"
 	"golang_testing_grpc/pkg/response"
 	"log"
 	"net/http"
-
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 
 	"github.com/gin-gonic/gin"
 	"github.com/quangdangfit/gocommon/logger"
@@ -34,15 +32,12 @@ func NewServer(validator validation.Validation, db db.IDatabaseInterface) *Serve
 
 func (s Server) Run() error {
 	_ = s.engine.SetTrustedProxies(nil)
-	if s.cfg.Environment == config.ProductEnv {
-		gin.SetMode(gin.ReleaseMode)
-	}
 
 	if err := s.MapRoutes(); err != nil {
 		log.Fatalf("MapRoutes Error: %v", err)
 	}
 
-	s.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	// s.engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 	s.engine.GET("/health", func(ctx *gin.Context) {
 		response.JSON(ctx, http.StatusOK, nil)
 	})
@@ -60,6 +55,7 @@ func (s Server) GetEngine() *gin.Engine {
 }
 
 func (s Server) MapRoutes() error {
-	_ = s.engine.Group("/api/v1")
+	v1 := s.engine.Group("/api/v1")
+	productHttp.Routes(v1, s.db, s.validator)
 	return nil
 }
