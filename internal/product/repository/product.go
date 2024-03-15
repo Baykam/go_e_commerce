@@ -61,3 +61,6 @@ func (r *ProductRepo) ListProducts(ctx context.Context, req *dto.ListProductReq,
 	pagination := paging.New(1, 10, int64(totalItemCount))
 	return productList, pagination, nil
 }
+func (r *ProductRepo) GetBestDeals() {
+
+}
