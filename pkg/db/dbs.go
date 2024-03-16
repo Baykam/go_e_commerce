@@ -9,10 +9,11 @@ import (
 )
 
 type IDatabaseInterface interface {
-	JustQuery(ctx context.Context, tableName string, query string) (*sql.Rows, error)
+	JustQueryForList(ctx context.Context, tableName string, query string) (*sql.Rows, error)
 	InsertInto(tableName string, dataPlace string, insertData string) (sql.Result, error)
 	UpdateData(tableName string, updateData string, newData string, whereData string) (sql.Result, error)
 	DeleteData(tableName string, whereData string) (sql.Result, error)
+	QueryRow(tableName string, query string) *sql.Row
 	GetLimit(pageLimit int) string
 	WhereData(query string) string
 	GetOffset(pageOffset int) string
@@ -57,13 +58,19 @@ func (d *Database) CloseDatabase() error {
 	return nil
 }
 
-func (d *Database) JustQuery(ctx context.Context, tableName string, query string) (*sql.Rows, error) {
+func (d *Database) JustQueryForList(ctx context.Context, tableName string, query string) (*sql.Rows, error) {
 	q := fmt.Sprintf(`SELECT * FROM %s %s`, tableName, query)
 	rows, err := d.db.Query(q)
 	if err != nil {
 		return nil, err
 	}
 	return rows, nil
+}
+
+func (d *Database) QueryRow(tableName string, query string) *sql.Row {
+	q := fmt.Sprintf(`SELECT * FROM %s %s`, tableName, query)
+	row := d.db.QueryRow(q)
+	return row
 }
 
 func (d *Database) WhereData(query string) string {

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"golang_testing_grpc/internal/product/dto"
 	"golang_testing_grpc/internal/product/model"
 	"golang_testing_grpc/pkg/config"
@@ -28,7 +29,7 @@ func NewProductRepository(db db.IDatabaseInterface) *ProductRepo {
 func (r *ProductRepo) ListProducts(ctx context.Context, req *dto.ListProductReq, page int, limit int) ([]*model.Product, *paging.Pagination, error) {
 	ctx, cancel := context.WithTimeout(ctx, config.DatabaseTimeOut)
 	defer cancel()
-	rows, err := r.db.JustQuery(ctx, db.ProductTable, r.db.GetLimit(limit))
+	rows, err := r.db.JustQueryForList(ctx, db.ProductTable, r.db.GetLimit(limit))
 	if err != nil {
 		return nil, nil, err
 	}
@@ -61,6 +62,30 @@ func (r *ProductRepo) ListProducts(ctx context.Context, req *dto.ListProductReq,
 	pagination := paging.New(1, 10, int64(totalItemCount))
 	return productList, pagination, nil
 }
-func (r *ProductRepo) GetBestDeals() {
 
+func (d *ProductRepo) GetProductById(ctx context.Context, id int) (*model.Product, error) {
+	var product model.Product
+
+	// Ürün tablosundan sadece belirli bir ID'ye sahip olan ürünü almak için özel bir sorgu yapın
+	q := fmt.Sprintf("WHERE id = %d", id)
+
+	// QueryRow fonksiyonunu kullanarak sadece bir satırı alın
+	row := d.db.QueryRow(db.ProductTable, q)
+
+	// Satırı taramak için Scan yöntemini kullanın
+	if err := row.Scan(
+		&product.ID,
+		&product.CreatedAt,
+		&product.UpdatedAt,
+		&product.DeletedAt,
+		&product.Code,
+		&product.Name,
+		&product.Description,
+		&product.Price,
+		&product.Active,
+	); err != nil {
+		return nil, err
+	}
+
+	return &product, nil
 }
