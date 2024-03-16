@@ -10,8 +10,8 @@ import (
 
 type IDatabaseInterface interface {
 	JustQueryForList(ctx context.Context, tableName string, query string) (*sql.Rows, error)
-	InsertInto(tableName string, dataPlace string, insertData string) (sql.Result, error)
-	UpdateData(tableName string, updateData string, newData string, whereData string) (sql.Result, error)
+	InsertInto(tableName string, dataPlace string, insertData string, args ...interface{}) (sql.Result, error)
+	UpdateData(tableName string, newData string, whereData string, values ...interface{}) (sql.Result, error)
 	DeleteData(tableName string, whereData string) (sql.Result, error)
 	QueryRow(tableName string, query string) *sql.Row
 	GetLimit(pageLimit int) string
@@ -88,18 +88,17 @@ func (d *Database) GetOffset(pageOffset int) string {
 	return q
 }
 
-func (d *Database) InsertInto(tableName string, dataPlace string, insertData string) (sql.Result, error) {
+func (d *Database) InsertInto(tableName string, dataPlace string, insertData string, args ...interface{}) (sql.Result, error) {
 	q := fmt.Sprintf(`INSERT INTO %s (%s) VALUES (%s)`, tableName, dataPlace, insertData)
-	rows, err := d.db.Exec(q)
+	rows, err := d.db.Exec(q, args...)
 	if err != nil {
 		return nil, err
 	}
 	return rows, nil
 }
-
-func (d *Database) UpdateData(tableName string, updateData string, newData string, whereData string) (sql.Result, error) {
-	q := fmt.Sprintf(`UPDATE %s SET %s = %s WHERE %s`, tableName, updateData, newData, whereData)
-	rows, err := d.db.Exec(q)
+func (d *Database) UpdateData(tableName string, newData string, whereData string, values ...interface{}) (sql.Result, error) {
+	q := fmt.Sprintf(`UPDATE %s SET %s WHERE %s`, tableName, newData, whereData)
+	rows, err := d.db.Exec(q, values...)
 	if err != nil {
 		return nil, err
 	}

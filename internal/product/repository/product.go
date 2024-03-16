@@ -14,6 +14,7 @@ import (
 
 type IProductRepository interface {
 	ListProducts(ctx context.Context, req *dto.ListProductReq, page int, limit int) ([]*model.Product, *paging.Pagination, error)
+	GetProductById(ctx context.Context, id int) (*model.Product, error)
 }
 
 type ProductRepo struct {
@@ -66,13 +67,10 @@ func (r *ProductRepo) ListProducts(ctx context.Context, req *dto.ListProductReq,
 func (d *ProductRepo) GetProductById(ctx context.Context, id int) (*model.Product, error) {
 	var product model.Product
 
-	// Ürün tablosundan sadece belirli bir ID'ye sahip olan ürünü almak için özel bir sorgu yapın
 	q := fmt.Sprintf("WHERE id = %d", id)
 
-	// QueryRow fonksiyonunu kullanarak sadece bir satırı alın
 	row := d.db.QueryRow(db.ProductTable, q)
 
-	// Satırı taramak için Scan yöntemini kullanın
 	if err := row.Scan(
 		&product.ID,
 		&product.CreatedAt,
@@ -88,4 +86,33 @@ func (d *ProductRepo) GetProductById(ctx context.Context, id int) (*model.Produc
 	}
 
 	return &product, nil
+}
+
+func (r *ProductRepo) CreateProduct(ctx context.Context, product *model.Product) error {
+	dataPlace := "updated_at, code, name, description, price, active"
+	insertData := "$1, $2, $3, $4, $5, $6"
+	_, err := r.db.InsertInto(db.ProductTable, dataPlace, insertData, product.UpdatedAt, product.Code, product.Name, product.Description, product.Price, product.Active)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ProductRepo) UpdateProduct(ctx context.Context, product *model.Product, id int) error {
+	whereData := fmt.Sprintf("id = %d", id)
+	updateData := "updated_at = $1, code = $2, name = $3, description = $4, price = $5, active = $6"
+	_, err := r.db.UpdateData(db.ProductTable, updateData, whereData, product.UpdatedAt, product.Code, product.Name, product.Description, product.Price, product.Active)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ProductRepo) DeleteProduct(ctx context.Context, id int) error {
+	whereData := fmt.Sprintf("id = %d", id)
+	_, err := r.db.DeleteData(db.ProductTable, whereData)
+	if err != nil {
+		return err
+	}
+	return nil
 }
